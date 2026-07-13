@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="kmccore"
+version="${file.jarVersion}"
+displayName="KMC Core"
+description="Core mod for server configuration synchronization, default settings enforcement, datapacks and texture packs locking."
+
+[[dependencies.kmccore]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"

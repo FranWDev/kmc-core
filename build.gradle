@@ -1,0 +1,82 @@
+plugins {
+    id 'net.minecraftforge.gradle' version '6.0.+'
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+apply plugin: 'java'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+sourceSets {
+    test {
+        java { srcDir 'src/test/java' }
+        resources { srcDir 'src/test/resources' }
+    }
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+
+    runs {
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                kmccore { source sourceSets.main }
+            }
+        }
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                kmccore { source sourceSets.main }
+            }
+        }
+    }
+}
+
+repositories {
+    maven { url 'https://maven.minecraftforge.net' }
+    maven { url 'https://maven.architectury.dev/' }
+    maven { url 'https://maven.ftb.dev/releases' }
+    maven { url 'https://maven.saps.dev/minecraft' }
+    maven { url 'https://maven.twelveiterations.com/repository/maven-public/' }
+    maven { url 'https://maven.blamejared.com' }
+    maven { url 'https://modmaven.dev' }
+    maven { url 'https://api.modrinth.com/maven' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Mixin annotation processor for refmap generation
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    // Optional: Waystones (depends on Balm)
+    compileOnly fg.deobf("maven.modrinth:balm:${balm_version}")
+    compileOnly fg.deobf("maven.modrinth:waystones:${waystones_version}")
+
+    // Test dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title'   : mod_id,
+            'Implementation-Title'  : mod_id,
+            'Implementation-Version': version,
+            'MixinConfigs'          : 'kmccore.mixins.json'
+        ])
+    }
+}
+
+mixin {
+    add sourceSets.main, 'kmccore.refmap.json'
+    config 'kmccore.mixins.json'
+}
+
+test {
+    useJUnitPlatform()
+}
