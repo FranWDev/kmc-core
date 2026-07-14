@@ -44,6 +44,7 @@ repositories {
     maven { url 'https://maven.blamejared.com' }
     maven { url 'https://modmaven.dev' }
     maven { url 'https://api.modrinth.com/maven' }
+    maven { url 'https://www.cursemaven.com' }
     mavenCentral()
 }
 
@@ -56,6 +57,10 @@ dependencies {
     // Optional: Waystones (depends on Balm)
     compileOnly fg.deobf("maven.modrinth:balm:${balm_version}")
     compileOnly fg.deobf("maven.modrinth:waystones:${waystones_version}")
+
+    // Iron's Spells 'n Spellbooks + Epic Fight (compile-time only, provided at runtime by the modpack)
+    compileOnly fg.deobf("curse.maven:irons-spells-n-spellbooks-855414:8364933")
+    compileOnly fg.deobf("curse.maven:epic-fight-mod-405076:8049910")
 
     // Test dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'

@@ -1,10 +1,15 @@
 {
   "required": true,
+  "plugin": "dev.franwdev.kmccore.mixin.KmcCoreMixinPlugin",
   "package": "dev.franwdev.kmccore.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "kmccore.refmap.json",
   "mixins": [],
-  "client": [],
+  "client": [
+    "irons.SpellcastingRenderEngineMixin",
+    "irons.SpellcastingLocalPlayerPatchMixin",
+    "irons.SpellcastingControlEngineMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

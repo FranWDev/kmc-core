@@ -2,6 +2,7 @@ package dev.franwdev.kmccore.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.franwdev.kmccore.KmcCore;
+import dev.franwdev.kmccore.client.handler.SpellcastingFirstPersonHandler;
 import dev.franwdev.kmccore.config.KmcCoreConfig;
 import dev.franwdev.kmccore.network.SyncConfigPacket;
 import net.minecraft.client.KeyMapping;
@@ -10,6 +11,7 @@ import net.minecraft.client.Options;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -34,6 +36,13 @@ public class ClientSetupHandler {
         modBus.addListener(ClientSetupHandler::onClientSetup);
         MinecraftForge.EVENT_BUS.addListener(ClientSetupHandler::onLoggingOut);
         MinecraftForge.EVENT_BUS.addListener(ClientSetupHandler::onClientTick);
+
+        // Suppress efiscompat's full-body model render in first-person during casting.
+        // Registered whenever both Iron's Spellbooks and Epic Fight are present.
+        if (ModList.get().isLoaded("ironsspellbooks") && ModList.get().isLoaded("epicfight")) {
+            MinecraftForge.EVENT_BUS.register(new SpellcastingFirstPersonHandler());
+            KmcCore.LOGGER.info("KMC Core: Registered SpellcastingFirstPersonHandler (ironsspellbooks + epicfight detected).");
+        }
     }
 
     private static void onClientSetup(final FMLClientSetupEvent event) {
