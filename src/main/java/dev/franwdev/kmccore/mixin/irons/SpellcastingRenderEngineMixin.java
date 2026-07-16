@@ -45,6 +45,11 @@ public abstract class SpellcastingRenderEngineMixin {
         if (mc.player == null) {
             return false;
         }
+        // Only intervene in first-person. In third-person the EpicFight model
+        // should render normally so other players and the local player see it.
+        if (!mc.options.getCameraType().isFirstPerson()) {
+            return false;
+        }
         if (!ClientMagicData.isCasting()) {
             return false;
         }
