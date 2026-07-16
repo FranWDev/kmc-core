@@ -18,6 +18,8 @@ import org.apache.logging.log4j.Logger;
 import dev.franwdev.kmccore.server.ServerSetupHandler;
 import dev.franwdev.kmccore.server.SpawnHandler;
 import dev.franwdev.kmccore.server.WaystoneSpawnHandler;
+import dev.franwdev.kmccore.server.NetherDeathPreventionHandler;
+import dev.franwdev.kmccore.server.LoginInvulnerabilityHandler;
 import net.minecraftforge.fml.ModList;
 
 import java.util.function.Supplier;
@@ -47,6 +49,8 @@ public class KmcCore {
         // Register server events
         MinecraftForge.EVENT_BUS.register(new ServerSetupHandler());
         MinecraftForge.EVENT_BUS.register(new SpawnHandler());
+        MinecraftForge.EVENT_BUS.register(new NetherDeathPreventionHandler());
+        MinecraftForge.EVENT_BUS.register(new LoginInvulnerabilityHandler());
         if (ModList.get().isLoaded("waystones")) {
             MinecraftForge.EVENT_BUS.register(new WaystoneSpawnHandler());
         }

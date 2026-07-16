@@ -19,6 +19,11 @@ public class KmcCoreConfig {
     public static ForgeConfigSpec.ConfigValue<String> FORCED_RESOURCE_PACK_HASH;
     public static BooleanValue DISABLE_BED_SPAWN;
     public static BooleanValue WAYSTONE_SET_SPAWN;
+    public static BooleanValue NETHER_DEATH_PREVENTION_ENABLED;
+    public static BooleanValue NETHER_DEATH_PREVENTION_TO_SPAWN;
+    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_X;
+    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_Y;
+    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_Z;
 
     static {
         ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
@@ -43,11 +48,31 @@ public class KmcCoreConfig {
 
         DISABLE_BED_SPAWN = serverBuilder
                 .comment("Cancel players from setting their spawn point when they sleep in a bed.")
-                .define("disableBedSpawn", true);
+                .define("disableBedSpawn", false);
 
         WAYSTONE_SET_SPAWN = serverBuilder
                 .comment("Set player spawn point at their position when clicking a Waystone.")
-                .define("waystoneSetSpawn", true);
+                .define("waystoneSetSpawn", false);
+
+        NETHER_DEATH_PREVENTION_ENABLED = serverBuilder
+                .comment("Enable Nether lethal damage death prevention.")
+                .define("netherDeathPreventionEnabled", true);
+
+        NETHER_DEATH_PREVENTION_TO_SPAWN = serverBuilder
+                .comment("If true, send players to their spawn point. If false (or if invalid), send to configured coordinates.")
+                .define("netherDeathPreventionToSpawn", true);
+
+        NETHER_DEATH_PREVENTION_X = serverBuilder
+                .comment("Nether death prevention teleport X coordinate.")
+                .defineInRange("netherDeathPreventionX", 0.0, -30000000.0, 30000000.0);
+
+        NETHER_DEATH_PREVENTION_Y = serverBuilder
+                .comment("Nether death prevention teleport Y coordinate.")
+                .defineInRange("netherDeathPreventionY", 80.0, -64.0, 320.0);
+
+        NETHER_DEATH_PREVENTION_Z = serverBuilder
+                .comment("Nether death prevention teleport Z coordinate.")
+                .defineInRange("netherDeathPreventionZ", 0.0, -30000000.0, 30000000.0);
 
         serverBuilder.pop();
         SERVER_SPEC = serverBuilder.build();

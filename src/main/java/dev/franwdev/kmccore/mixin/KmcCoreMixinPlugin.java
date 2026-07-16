@@ -26,6 +26,7 @@ public class KmcCoreMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+
         if (FMLEnvironment.dist.isDedicatedServer()) {
             if (mixinClassName.contains("SpellcastingRenderEngineMixin")
                     || mixinClassName.contains("SpellcastingLocalPlayerPatchMixin")
