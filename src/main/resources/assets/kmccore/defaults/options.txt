@@ -126,7 +126,7 @@ key_key.dragon_change_view:key.keyboard.f7
 key_key.combat_evolution.execution:key.mouse.right
 key_key.modernfix.config:key.keyboard.unknown
 key_qualitysounds.sound_reload_key:key.keyboard.unknown
-key_key.epicskills.open_skill_tree:key.keyboard.n
+key_key.epicskills.open_skill_tree:key.keyboard.semicolon
 key_info.structure_gel.building_tool.undo:key.keyboard.z:CONTROL
 key_info.structure_gel.building_tool.redo:key.keyboard.y:CONTROL
 key_key.structure_gel.open_building_tool_gui:key.keyboard.unknown
