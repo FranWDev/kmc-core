@@ -1,46 +1,50 @@
 package dev.franwdev.kmccore.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.InputConstants.Key;
 import dev.franwdev.kmccore.KmcCore;
 import dev.franwdev.kmccore.client.handler.SpellcastingFirstPersonHandler;
-import dev.franwdev.kmccore.config.KmcCoreConfig;
-import dev.franwdev.kmccore.network.SyncConfigPacket;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.config.ConfigTracker;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
-
+import dev.franwdev.kmccore.network.SyncConfigPayload;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.Pack;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.config.ConfigTracker;
+import net.neoforged.fml.config.ModConfig.Type;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut;
+import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
+import net.neoforged.neoforge.common.NeoForge;
 
 public class ClientSetupHandler {
 
     public static void init(IEventBus modBus) {
         modBus.addListener(ClientSetupHandler::onClientSetup);
-        MinecraftForge.EVENT_BUS.addListener(ClientSetupHandler::onLoggingOut);
-        MinecraftForge.EVENT_BUS.addListener(ClientSetupHandler::onClientTick);
+        NeoForge.EVENT_BUS.addListener(ClientSetupHandler::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(ClientSetupHandler::onClientTick);
 
         // Suppress efiscompat's full-body model render in first-person during casting.
         // Registered whenever both Iron's Spellbooks and Epic Fight are present.
         if (ModList.get().isLoaded("ironsspellbooks") && ModList.get().isLoaded("epicfight")) {
-            MinecraftForge.EVENT_BUS.register(new SpellcastingFirstPersonHandler());
+            SpellcastingFirstPersonHandler.init();
             KmcCore.LOGGER.info("KMC Core: Registered SpellcastingFirstPersonHandler (ironsspellbooks + epicfight detected).");
         }
     }
@@ -73,9 +77,9 @@ public class ClientSetupHandler {
 
         boolean changed = false;
 
-        try (java.io.InputStream in = ClientSetupHandler.class.getResourceAsStream("/assets/kmccore/defaults/options.txt")) {
+        try (InputStream in = ClientSetupHandler.class.getResourceAsStream("/assets/kmccore/defaults/options.txt")) {
             if (in != null) {
-                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8))) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.trim();
@@ -89,8 +93,8 @@ public class ClientSetupHandler {
                                 for (KeyMapping keyMapping : options.keyMappings) {
                                     if (keyMapping.getName().equals(keybindName)) {
                                         try {
-                                            InputConstants.Key currentKey = keyMapping.getKey();
-                                            InputConstants.Key targetKey = InputConstants.getKey(rawVal);
+                                            Key currentKey = keyMapping.getKey();
+                                            Key targetKey = InputConstants.getKey(rawVal);
                                             if (!currentKey.equals(targetKey)) {
                                                 keyMapping.setKey(targetKey);
                                                 changed = true;
@@ -117,7 +121,7 @@ public class ClientSetupHandler {
         }
 
         // Copy bundled configuration defaults
-        try (java.io.InputStream configIn = ClientSetupHandler.class.getResourceAsStream("/assets/kmccore/defaults/config/alexscaves-client.toml")) {
+        try (InputStream configIn = ClientSetupHandler.class.getResourceAsStream("/assets/kmccore/defaults/config/alexscaves-client.toml")) {
             if (configIn != null) {
                 Path targetConfig = FMLPaths.CONFIGDIR.get().resolve("alexscaves-client.toml");
                 Files.copy(configIn, targetConfig, StandardCopyOption.REPLACE_EXISTING);
@@ -135,13 +139,13 @@ public class ClientSetupHandler {
         }
     }
 
-    public static void handleConfigSync(SyncConfigPacket packet) {
+    public static void handleConfigSync(SyncConfigPayload payload) {
         Path configDir = FMLPaths.CONFIGDIR.get();
-        Map<String, String> configs = packet.getConfigs();
+        Map<String, String> configs = payload.configs();
 
         KmcCore.LOGGER.info("KMC Core: Received {} configurations to synchronize from server.", configs.size());
 
-        for (Map.Entry<String, String> entry : configs.entrySet()) {
+        for (Entry<String, String> entry : configs.entrySet()) {
             String fileName = entry.getKey();
             String content = entry.getValue();
 
@@ -164,17 +168,17 @@ public class ClientSetupHandler {
             }
         }
 
-        // Force Forge to reload configs from disk
+        // Force NeoForge to reload configs from disk
         try {
-            ConfigTracker.INSTANCE.loadConfigs(ModConfig.Type.COMMON, configDir);
-            ConfigTracker.INSTANCE.loadConfigs(ModConfig.Type.CLIENT, configDir);
+            ConfigTracker.INSTANCE.loadConfigs(Type.COMMON, configDir);
+            ConfigTracker.INSTANCE.loadConfigs(Type.CLIENT, configDir);
             KmcCore.LOGGER.info("KMC Core: Triggered config reload for synchronized options.");
         } catch (Exception e) {
             KmcCore.LOGGER.error("KMC Core: Error reloading configs reflectively", e);
         }
     }
 
-    private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+    private static void onLoggingOut(LoggingOut event) {
         Path configDir = FMLPaths.CONFIGDIR.get();
         KmcCore.LOGGER.info("KMC Core: Disconnecting from server. Reverting synchronized configurations...");
 
@@ -195,8 +199,8 @@ public class ClientSetupHandler {
             });
 
             // Reload original configs
-            ConfigTracker.INSTANCE.loadConfigs(ModConfig.Type.COMMON, configDir);
-            ConfigTracker.INSTANCE.loadConfigs(ModConfig.Type.CLIENT, configDir);
+            ConfigTracker.INSTANCE.loadConfigs(Type.COMMON, configDir);
+            ConfigTracker.INSTANCE.loadConfigs(Type.CLIENT, configDir);
         } catch (IOException e) {
             KmcCore.LOGGER.error("KMC Core: Failed to list configuration directory during disconnect restoration", e);
         }
@@ -284,10 +288,8 @@ public class ClientSetupHandler {
         }
     }
 
-    private static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            checkXray();
-        }
+    private static void onClientTick(Post event) {
+        checkXray();
     }
 
     private static void checkXray() {
@@ -297,12 +299,12 @@ public class ClientSetupHandler {
         }
 
         ResourceLocation[] checks = new ResourceLocation[] {
-            new ResourceLocation("minecraft", "blockstates/stone.json"),
-            new ResourceLocation("minecraft", "blockstates/deepslate.json"),
-            new ResourceLocation("minecraft", "blockstates/netherrack.json"),
-            new ResourceLocation("minecraft", "blockstates/dirt.json"),
-            new ResourceLocation("minecraft", "blockstates/sand.json"),
-            new ResourceLocation("minecraft", "blockstates/gravel.json")
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/stone.json"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/deepslate.json"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/netherrack.json"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/dirt.json"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/sand.json"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "blockstates/gravel.json")
         };
 
         for (Pack pack : mc.getResourcePackRepository().getSelectedPacks()) {
@@ -357,3 +359,4 @@ public class ClientSetupHandler {
         System.exit(0);
     }
 }
+

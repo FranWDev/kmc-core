@@ -3,54 +3,44 @@ package dev.franwdev.kmccore.client.handler;
 import io.redspace.ironsspellbooks.player.ClientMagicData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import yesman.epicfight.api.animation.AnimationPlayer;
 import yesman.epicfight.api.animation.Animator;
 import yesman.epicfight.api.animation.types.EntityState;
+import yesman.epicfight.api.animation.types.StaticAnimation;
+import yesman.epicfight.api.asset.AssetAccessor;
 import yesman.epicfight.api.client.animation.ClientAnimator;
 import yesman.epicfight.api.client.animation.Layer;
-import yesman.epicfight.api.client.forgeevent.RenderEpicFightPlayerEvent;
+import yesman.epicfight.api.client.animation.Layer.Priority;
+import yesman.epicfight.api.client.event.EpicFightClientEventHooks.Render;
+import yesman.epicfight.api.client.event.types.render.ValidatePlayerModelEvent;
+import yesman.epicfight.client.world.capabilites.entitypatch.player.AbstractClientPlayerPatch;
 import yesman.epicfight.client.world.capabilites.entitypatch.player.LocalPlayerPatch;
 import yesman.epicfight.world.capabilities.EpicFightCapabilities;
-import yesman.epicfight.world.capabilities.entitypatch.player.PlayerPatch;
 
 /**
- * Prevents Epic Fight's {@link yesman.epicfight.client.renderer.FirstPersonRenderer}
- * from rendering the full player model in first-person during Iron's Spellbooks
- * casting animations (including GTBC spell lib spells).
- *
- * <h3>Why two conditions?</h3>
- * <ul>
- *   <li><b>{@code ClientMagicData.isCasting()}</b> – set server-side and synced
- *       via packet. May arrive 1-2 ticks late, causing a brief flicker where the
- *       EpicFight model appears before the flag is set.</li>
- *   <li><b>Active animation namespace "efiscompat"</b> – efiscompat registers
- *       EpicFight casting animations under its own namespace. If the current
- *       HIGHEST-priority layer animation belongs to efiscompat, it is a casting
- *       animation — even if the network packet has not arrived yet.</li>
- * </ul>
- * Either condition alone is sufficient to suppress the render.
- *
- * <p>Exception: inaction states (rolls, dashes) bypass both checks so Epic Fight
- * keeps control of those full-body animations.</p>
+ * Prevents Epic Fight from rendering the full player model in first-person
+ * during Iron's Spellbooks casting animations (including GTBC spell lib spells).
  */
 @OnlyIn(Dist.CLIENT)
 public class SpellcastingFirstPersonHandler {
 
     private static final String EFISCOMPAT_NAMESPACE = "efiscompat";
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onRenderEpicFightPlayer(RenderEpicFightPlayerEvent event) {
+    public static void init() {
+        Render.VALIDATE_PLAYER_MODEL_TO_RENDER.registerEvent(SpellcastingFirstPersonHandler::onValidatePlayerModel);
+    }
+
+    public static void onValidatePlayerModel(ValidatePlayerModelEvent event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer localPlayer = mc.player;
         if (localPlayer == null) {
             return;
         }
 
-        // Only act on the local player's patch.
-        PlayerPatch<?> patch = event.getPlayerPatch();
+        AbstractClientPlayerPatch<?> patch = event.getPlayerPatch();
         if (patch == null) {
             return;
         }
@@ -86,36 +76,30 @@ public class SpellcastingFirstPersonHandler {
         }
     }
 
-    /**
-     * Returns {@code true} if the HIGHEST-priority base layer in the player's
-     * Epic Fight animator is currently playing an animation registered by
-     * efiscompat (namespace = "efiscompat"), which means a casting animation
-     * is in progress even if {@code ClientMagicData.isCasting()} is not yet
-     * {@code true} due to network latency.
-     */
     private static boolean isPlayingEfiscompatCastAnimation(LocalPlayerPatch playerPatch) {
         Animator animator = playerPatch.getAnimator();
         if (!(animator instanceof ClientAnimator clientAnimator)) {
             return false;
         }
 
-        Layer layer = clientAnimator.baseLayer.getLayer(Layer.Priority.HIGHEST);
+        Layer layer = clientAnimator.baseLayer.getLayer(Priority.HIGHEST);
         if (layer == null || layer.isOff()) {
             return false;
         }
 
-        var animationPlayer = layer.animationPlayer;
+        AnimationPlayer animationPlayer = layer.animationPlayer;
         if (animationPlayer == null) {
             return false;
         }
 
-        var accessor = animationPlayer.getRealAnimation();
+        AssetAccessor<? extends StaticAnimation> accessor = animationPlayer.getRealAnimation();
         if (accessor == null || !accessor.isPresent()) {
             return false;
         }
 
-        var registryName = accessor.get().getRegistryName();
+        ResourceLocation registryName = accessor.registryName();
         return registryName != null
                 && EFISCOMPAT_NAMESPACE.equals(registryName.getNamespace());
     }
 }
+
