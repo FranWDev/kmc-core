@@ -5,12 +5,15 @@ import io.redspace.ironsspellbooks.api.item.weapons.MagicSwordItem;
 import io.redspace.ironsspellbooks.item.weapons.StaffItem;
 import io.redspace.ironsspellbooks.player.ClientMagicData;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import yesman.epicfight.api.animation.AnimationPlayer;
 import yesman.epicfight.api.animation.Animator;
 import yesman.epicfight.api.animation.types.AttackAnimation;
 import yesman.epicfight.api.animation.types.EntityState;
@@ -18,6 +21,7 @@ import yesman.epicfight.api.animation.types.StaticAnimation;
 import yesman.epicfight.api.asset.AssetAccessor;
 import yesman.epicfight.api.client.animation.ClientAnimator;
 import yesman.epicfight.api.client.animation.Layer;
+import yesman.epicfight.api.client.animation.Layer.Priority;
 import yesman.epicfight.client.world.capabilites.entitypatch.player.LocalPlayerPatch;
 
 /**
@@ -85,7 +89,7 @@ public abstract class SpellcastingLocalPlayerPatchMixin {
         // Only suppress in first-person view. Third-person must still show the
         // EpicFight model so other players (and the local player in 3rd person)
         // see the casting animation correctly.
-        var mc = Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (!mc.options.getCameraType().isFirstPerson()) {
             return false;
         }
@@ -106,7 +110,7 @@ public abstract class SpellcastingLocalPlayerPatchMixin {
         // isCasting() becomes true via network sync.
         if (mc.player != null && mc.player.isUsingItem()) {
             ItemStack using = mc.player.getUseItem();
-            var item = using.getItem();
+            Item item = using.getItem();
             if (item instanceof StaffItem
                     || item instanceof ISpellbook
                     || item instanceof MagicSwordItem) {
@@ -124,20 +128,21 @@ public abstract class SpellcastingLocalPlayerPatchMixin {
         if (!(animator instanceof ClientAnimator clientAnimator)) {
             return false;
         }
-        Layer layer = clientAnimator.baseLayer.getLayer(Layer.Priority.HIGHEST);
+        Layer layer = clientAnimator.baseLayer.getLayer(Priority.HIGHEST);
         if (layer == null || layer.isOff()) {
             return false;
         }
-        var animPlayer = layer.animationPlayer;
+        AnimationPlayer animPlayer = layer.animationPlayer;
         if (animPlayer == null) {
             return false;
         }
-        var accessor = animPlayer.getRealAnimation();
+        AssetAccessor<? extends StaticAnimation> accessor = animPlayer.getRealAnimation();
         if (accessor == null || !accessor.isPresent()) {
             return false;
         }
-        var registryName = accessor.get().getRegistryName();
+        ResourceLocation registryName = accessor.registryName();
         return registryName != null
                 && EFISCOMPAT_NAMESPACE.equals(registryName.getNamespace());
     }
 }
+
