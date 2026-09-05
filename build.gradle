@@ -1,87 +1,80 @@
 plugins {
-    id 'net.minecraftforge.gradle' version '6.0.+'
-    id 'org.spongepowered.mixin' version '0.7.+'
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.78'
 }
 
-apply plugin: 'java'
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-sourceSets {
-    test {
-        java { srcDir 'src/test/java' }
-        resources { srcDir 'src/test/resources' }
-    }
-}
-
-minecraft {
-    mappings channel: 'official', version: minecraft_version
+neoForge {
+    version = project.neoforge_version
 
     runs {
-        server {
-            workingDirectory project.file('run')
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                kmccore { source sourceSets.main }
-            }
-        }
         client {
-            workingDirectory project.file('run')
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                kmccore { source sourceSets.main }
-            }
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        server {
+            server()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArgument '--nogui'
+        }
+    }
+
+    mods {
+        "${project.mod_id}" {
+            sourceSet project.sourceSets.main
         }
     }
 }
 
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
 repositories {
-    maven { url 'https://maven.minecraftforge.net' }
-    maven { url 'https://maven.architectury.dev/' }
-    maven { url 'https://maven.ftb.dev/releases' }
-    maven { url 'https://maven.saps.dev/minecraft' }
-    maven { url 'https://maven.twelveiterations.com/repository/maven-public/' }
-    maven { url 'https://maven.blamejared.com' }
-    maven { url 'https://modmaven.dev' }
-    maven { url 'https://api.modrinth.com/maven' }
-    maven { url 'https://www.cursemaven.com' }
+    mavenLocal()
+    maven {
+        name = "CurseMaven"
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
     mavenCentral()
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-
-    // Mixin annotation processor for refmap generation
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-
-    // Optional: Waystones (depends on Balm)
-    compileOnly fg.deobf("maven.modrinth:balm:${balm_version}")
-    compileOnly fg.deobf("maven.modrinth:waystones:${waystones_version}")
-
-    // Iron's Spells 'n Spellbooks + Epic Fight (compile-time only, provided at runtime by the modpack)
-    compileOnly fg.deobf("curse.maven:irons-spells-n-spellbooks-855414:8364933")
-    compileOnly fg.deobf("curse.maven:epic-fight-mod-405076:8049910")
+    // Iron's Spells 'n Spellbooks, Epic Fight, Curios, and GeckoLib (compile-time only, provided at runtime by modpack)
+    compileOnly "curse.maven:irons-spells-n-spellbooks-855414:8680204"
+    compileOnly "curse.maven:epic-fight-mod-405076:8175609"
+    compileOnly "curse.maven:curios-309927:6529130"
+    compileOnly "curse.maven:geckolib-388172:8350073"
 
     // Test dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
 }
 
-jar {
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('jar', Jar) {
     manifest {
         attributes([
             'Specification-Title'   : mod_id,
-            'Implementation-Title'  : mod_id,
-            'Implementation-Version': version,
-            'MixinConfigs'          : 'kmccore.mixins.json'
+            'Specification-Vendor'  : mod_author,
+            'Specification-Version' : '1',
+            'Implementation-Title'  : project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor' : mod_author,
+            'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
-}
-
-mixin {
-    add sourceSets.main, 'kmccore.refmap.json'
-    config 'kmccore.mixins.json'
 }
 
 test {
     useJUnitPlatform()
 }
+

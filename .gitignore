@@ -38,3 +38,6 @@ Thumbs.db
 run/
 out/
 bin
+
+# Agent docs
+.agent/
