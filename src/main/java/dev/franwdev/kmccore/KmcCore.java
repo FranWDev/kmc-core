@@ -10,7 +10,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig.Type;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
@@ -27,8 +26,8 @@ public class KmcCore {
         modContainer.registerConfig(Type.CLIENT, KmcCoreConfig.CLIENT_SPEC, "kmccore-client.toml");
         modContainer.registerConfig(Type.SERVER, KmcCoreConfig.SERVER_SPEC, "kmccore-server.toml");
 
-        // FML events
-        modBus.addListener(this::setup);
+        // Network payload registration
+        modBus.addListener(NetworkHandler::register);
 
         // Client initialization safely guarded
         if (FMLEnvironment.dist.isClient()) {
@@ -40,8 +39,5 @@ public class KmcCore {
         NeoForge.EVENT_BUS.register(new NetherDeathPreventionHandler());
         NeoForge.EVENT_BUS.register(new LoginInvulnerabilityHandler());
     }
-
-    private void setup(final FMLCommonSetupEvent event) {
-        NetworkHandler.register();
-    }
 }
+

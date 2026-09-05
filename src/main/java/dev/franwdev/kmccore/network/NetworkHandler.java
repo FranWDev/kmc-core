@@ -1,35 +1,35 @@
 package dev.franwdev.kmccore.network;
 
 import dev.franwdev.kmccore.KmcCore;
-import net.minecraft.resources.ResourceLocation;
+import dev.franwdev.kmccore.client.ClientSetupHandler;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class NetworkHandler {
 
-    private static final String PROTOCOL_VERSION = "1.0";
-    public static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder
-            .named(new ResourceLocation(KmcCore.MODID, "main"))
-            .clientAcceptedVersions(PROTOCOL_VERSION::equals)
-            .serverAcceptedVersions(PROTOCOL_VERSION::equals)
-            .networkProtocolVersion(() -> PROTOCOL_VERSION)
-            .simpleChannel();
-
-    private static int index = 0;
-
-    public static void register() {
-        CHANNEL.registerMessage(
-                index++,
-                SyncConfigPacket.class,
-                SyncConfigPacket::encode,
-                SyncConfigPacket::decode,
-                SyncConfigPacket::handle
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(KmcCore.MODID);
+        registrar.playToClient(
+                SyncConfigPayload.TYPE,
+                SyncConfigPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncConfig
         );
     }
 
-    public static void sendToClient(ServerPlayer player, SyncConfigPacket packet) {
-        CHANNEL.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+    private static void handleSyncConfig(SyncConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (FMLEnvironment.dist.isClient()) {
+                ClientSetupHandler.handleConfigSync(payload);
+            }
+        });
+    }
+
+    public static void sendToClient(ServerPlayer player, SyncConfigPayload payload) {
+        PacketDistributor.sendToPlayer(player, payload);
     }
 }
+
