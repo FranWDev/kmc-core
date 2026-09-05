@@ -1,35 +1,35 @@
 package dev.franwdev.kmccore.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.BooleanValue;
+import net.neoforged.neoforge.common.ModConfigSpec.Builder;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
+import net.neoforged.neoforge.common.ModConfigSpec.DoubleValue;
 
 public class KmcCoreConfig {
 
-    public static final ForgeConfigSpec CLIENT_SPEC;
-    public static final ForgeConfigSpec SERVER_SPEC;
-
-
+    public static final ModConfigSpec CLIENT_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
 
     // Server-side options
-    public static ForgeConfigSpec.ConfigValue<List<? extends String>> FORCED_DATAPACKS;
-    public static ForgeConfigSpec.ConfigValue<String> FORCED_RESOURCE_PACK_URL;
-    public static ForgeConfigSpec.ConfigValue<String> FORCED_RESOURCE_PACK_HASH;
+    public static ConfigValue<List<? extends String>> FORCED_DATAPACKS;
+    public static ConfigValue<String> FORCED_RESOURCE_PACK_URL;
+    public static ConfigValue<String> FORCED_RESOURCE_PACK_HASH;
     public static BooleanValue NETHER_DEATH_PREVENTION_ENABLED;
     public static BooleanValue NETHER_DEATH_PREVENTION_TO_SPAWN;
-    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_X;
-    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_Y;
-    public static ForgeConfigSpec.DoubleValue NETHER_DEATH_PREVENTION_Z;
+    public static DoubleValue NETHER_DEATH_PREVENTION_X;
+    public static DoubleValue NETHER_DEATH_PREVENTION_Y;
+    public static DoubleValue NETHER_DEATH_PREVENTION_Z;
 
     static {
-        ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
+        Builder clientBuilder = new Builder();
         clientBuilder.comment("KMC Core Client Configurations").push("client");
         clientBuilder.pop();
         CLIENT_SPEC = clientBuilder.build();
 
-        ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
+        Builder serverBuilder = new Builder();
         serverBuilder.comment("KMC Core Server Configurations").push("server");
 
         FORCED_DATAPACKS = serverBuilder
