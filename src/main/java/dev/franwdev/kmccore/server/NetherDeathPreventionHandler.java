@@ -2,20 +2,16 @@ package dev.franwdev.kmccore.server;
 
 import dev.franwdev.kmccore.config.KmcCoreConfig;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
-import java.util.Optional;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.portal.DimensionTransition;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 
 public class NetherDeathPreventionHandler {
 
@@ -37,20 +33,10 @@ public class NetherDeathPreventionHandler {
                 boolean teleported = false;
 
                 if (KmcCoreConfig.NETHER_DEATH_PREVENTION_TO_SPAWN.get()) {
-                    BlockPos respawnPos = player.getRespawnPosition();
-                    ResourceKey<Level> respawnDim = player.getRespawnDimension();
-                    if (respawnPos != null) {
-                        ServerLevel targetWorld = player.server.getLevel(respawnDim);
-                        if (targetWorld != null) {
-                            Optional<Vec3> spawnVec = Player.findRespawnPositionAndUseSpawnBlock(
-                                    targetWorld, respawnPos, player.getRespawnAngle(), player.isRespawnForced(), true
-                            );
-                            if (spawnVec.isPresent()) {
-                                Vec3 vec = spawnVec.get();
-                                player.teleportTo(targetWorld, vec.x, vec.y, vec.z, player.getYRot(), player.getXRot());
-                                teleported = true;
-                            }
-                        }
+                    DimensionTransition destination = player.findRespawnPositionAndUseSpawnBlock(true, DimensionTransition.DO_NOTHING);
+                    if (destination != null) {
+                        player.changeDimension(destination);
+                        teleported = true;
                     }
 
                     if (!teleported) {
@@ -87,3 +73,4 @@ public class NetherDeathPreventionHandler {
         }
     }
 }
+

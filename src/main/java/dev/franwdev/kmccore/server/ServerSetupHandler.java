@@ -3,20 +3,9 @@ package dev.franwdev.kmccore.server;
 import dev.franwdev.kmccore.KmcCore;
 import dev.franwdev.kmccore.config.KmcCoreConfig;
 import dev.franwdev.kmccore.network.NetworkHandler;
-import dev.franwdev.kmccore.network.SyncConfigPacket;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundResourcePackPacket;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.packs.repository.PackRepository;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraft.world.level.storage.LevelResource;
-
+import dev.franwdev.kmccore.network.SyncConfigPayload;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -25,13 +14,26 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
 public class ServerSetupHandler {
 
     @SubscribeEvent
-    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity().getCommandSenderWorld().isClientSide()) {
+    public void onPlayerLoggedIn(PlayerLoggedInEvent event) {
+        if (event.getEntity().level().isClientSide()) {
             return;
         }
 
@@ -137,7 +139,7 @@ public class ServerSetupHandler {
         }
 
         if (!configsToSync.isEmpty()) {
-            SyncConfigPacket packet = new SyncConfigPacket(configsToSync);
+            SyncConfigPayload packet = new SyncConfigPayload(configsToSync);
             NetworkHandler.sendToClient(player, packet);
             KmcCore.LOGGER.info("KMC Core: Sent {} synchronized configurations to player {}", configsToSync.size(), player.getName().getString());
         }
@@ -151,7 +153,13 @@ public class ServerSetupHandler {
                 hash = "";
             }
             Component prompt = Component.literal("This server requires a custom resource pack.");
-            ClientboundResourcePackPacket packPacket = new ClientboundResourcePackPacket(url, hash, true, prompt);
+            ClientboundResourcePackPushPacket packPacket = new ClientboundResourcePackPushPacket(
+                    UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8)),
+                    url,
+                    hash,
+                    true,
+                    Optional.of(prompt)
+            );
             player.connection.send(packPacket);
             KmcCore.LOGGER.info("KMC Core: Sent forced resource pack packet to player {}", player.getName().getString());
         }
@@ -187,3 +195,4 @@ public class ServerSetupHandler {
         }
     }
 }
+
