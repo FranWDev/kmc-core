@@ -1,0 +1,41 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="kmccore"
+version="${file.jarVersion}"
+displayName="KMC Core"
+description="Core mod for server configuration synchronization, default settings enforcement, datapacks and texture packs locking."
+authors="KMC"
+
+[[dependencies.kmccore]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.kmccore]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1,1.22)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.kmccore]]
+    modId="epicfight"
+    type="optional"
+    versionRange="[20.9.0,)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.kmccore]]
+    modId="irons_spellbooks"
+    type="optional"
+    versionRange="[3.4.0,)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[mixins]]
+config="kmccore.mixins.json"
